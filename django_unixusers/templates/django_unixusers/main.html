@@ -1,0 +1,15 @@
+{% extends 'django_unixusers/base.html' %}
+{% block head_title %}
+Home
+{% endblock %}
+
+{% block content %}
+    <h2>Welcome</h2>
+    {% if user.is_authenticated %}
+        <p>Continue to <a href="{% url 'profile' %}">profile</a>.</p>
+    {% else %}
+        <p><a href="{% url 'account_login' %}">Login</a> or
+            <a href="{% url 'signup' %}">Signup</a>.</p>
+    {% endif %}
+
+{% endblock %}
