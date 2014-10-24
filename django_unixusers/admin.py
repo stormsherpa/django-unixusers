@@ -16,6 +16,10 @@ from django.contrib import messages
 from django.utils.html import escape
 
 
+class AuthorizedKeysInline(admin.StackedInline):
+    model = models.AuthorizedKey
+
+
 class UserAdmin(admin.ModelAdmin):
     change_user_password_template = None
     fieldsets = (
@@ -29,6 +33,8 @@ class UserAdmin(admin.ModelAdmin):
     readonly_fields = ('username', 'password', 'uid', )
 
     change_password_form = AdminPasswordChangeForm
+
+    inlines = [AuthorizedKeysInline]
 
     def get_urls(self):
         return [

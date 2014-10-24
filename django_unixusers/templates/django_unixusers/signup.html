@@ -4,6 +4,7 @@ Login
 {% endblock %}
 
 {% block content %}
+    {% if not user.is_authenticated %}
     <h2>Signup</h2>
     <form method="post">
         <table class="table">
@@ -16,5 +17,8 @@ Login
             </tr>
         </table>
     </form>
+    {% else %}
+        Go to <a href="{% url 'profile' %}">Profile</a> page
+    {% endif %}
 
 {% endblock %}

@@ -18,6 +18,7 @@ class Group(models.Model):
 class User(AbstractUser):
     uid = models.IntegerField(unique=True, blank=True, null=True)
     unix_groups = models.ManyToManyField(Group, blank=True)
+    email_validated = models.BooleanField(default=True, blank=True)
 
     def set_password(self, raw_password):
         salt = crypt.crypt(str(time.time()), '$5$')[30:]
@@ -37,3 +38,9 @@ class User(AbstractUser):
                 self.uid = settings.BASE_UNIX_UID
             self.save()
         return self.uid
+
+
+class AuthorizedKey(models.Model):
+    user = models.ForeignKey(User, related_name='authorized_keys')
+    name = models.CharField(max_length=50)
+    sshkey = models.TextField(max_length=1024)
