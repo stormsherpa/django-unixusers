@@ -1,15 +1,54 @@
+import json
 from django.contrib.auth.forms import UserCreationForm
-from django.views.generic.base import TemplateView
+from django.template.loader import render_to_string
+from django.views.generic.base import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
 from django.utils import decorators
 from django.shortcuts import render
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, HttpResponse, JsonResponse
+from django.views.generic.detail import SingleObjectMixin
 
-from django_unixusers import forms
+from django_unixusers import forms, models
 
+import uuid
+
+class ValidateEmailView(SingleObjectMixin, View):
+    model = models.User
+    slug_field = 'email_validation_code'
+
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        messages.add_message(self.request, messages.INFO,
+                             "Got validation email for user '{}' at {}".format(user.username, user.email))
+        if request.user.is_authenticated():
+            if request.user != user:
+                messages.add_message(self.request, messages.ERROR,
+                                     'Attempting to validate email for one user while logged in as another is not allowed!')
+                return HttpResponseRedirect(reverse('main'))
+        user.email_validated = True
+        user.email_validation_code = None
+        user.save()
+
+        return HttpResponseRedirect(reverse('profile'))
+
+
+class RequestValidateEmailView(View):
+    def get(self, request):
+        if not request.user.is_authenticated():
+            return HttpResponseBadRequest()
+        if not request.user.email or request.user.email == '':
+            return JsonResponse({'result': 'error', 'message': 'Invalid email'})
+        base_url = "{}://{}".format(request.scheme, request.environ['HTTP_HOST'])
+        request.user.email_validation_code = str(uuid.uuid4())
+        request.user.save()
+        email_body = render_to_string('django_unixusers/email/validate.html',
+                                      {'user': request.user,
+                                       'base_url': base_url})
+        request.user.email_user("Validate your email", email_body)
+        return JsonResponse({'result': 'ok'})
 
 
 class AccessControlMixin(object):
@@ -62,5 +101,6 @@ class ProfileView(AccessControlMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
         if not self.request.user.email_validated:
-            messages.add_message(self.request, messages.WARNING, 'Email still requires validation.')
+            messages.add_message(self.request, messages.WARNING,
+                                 render_to_string('django_unixusers/messages/email_requires_validation.html'))
         return context

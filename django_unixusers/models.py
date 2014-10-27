@@ -19,6 +19,7 @@ class User(AbstractUser):
     uid = models.IntegerField(unique=True, blank=True, null=True)
     unix_groups = models.ManyToManyField(Group, blank=True)
     email_validated = models.BooleanField(default=True, blank=True)
+    email_validation_code = models.CharField(max_length=50, blank=True, null=True)
 
     def set_password(self, raw_password):
         salt = crypt.crypt(str(time.time()), '$5$')[30:]
