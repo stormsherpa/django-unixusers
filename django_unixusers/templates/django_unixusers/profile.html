@@ -4,6 +4,26 @@ Profile
 {% endblock %}
 
 {% block content %}
-    <h2>Welcome</h2>
+    <h2>Welcome {{ user.username }}</h2>
+    <div class="container">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Change Password
+                </div>
+                <div class="panel-body">
+                    <table class="table">
+                        {{ forms.password_change.as_table }}
+                        <tr>
+                            <td colspan="2" style="text-align: right;">
+                                <input type="submit" value="Change Password"
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
 
+        </div>
+
+    </div>
 {% endblock %}

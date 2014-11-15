@@ -8,7 +8,7 @@ function request_email_validation(){
                 alert(data.result);
             },
             error: function(jqXHR, textStatus, errorThrown){
-
+                alert('error requesting email: '+errorThrown);
             }
         }
 

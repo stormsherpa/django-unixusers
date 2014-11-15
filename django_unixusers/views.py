@@ -103,4 +103,7 @@ class ProfileView(AccessControlMixin, TemplateView):
         if not self.request.user.email_validated:
             messages.add_message(self.request, messages.WARNING,
                                  render_to_string('django_unixusers/messages/email_requires_validation.html'))
+        context['forms'] = {
+            'password_change': forms.PasswordChangeForm(),
+        }
         return context
