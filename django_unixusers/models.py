@@ -1,13 +1,12 @@
-from django.contrib.auth.models import BaseUserManager, AbstractUser
+from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.hashers import identify_hasher, get_hasher
 
 from django.conf import settings
 
-import crypt
-import time
+from django_unixusers.hashers import BaseUnixPasswordHasher
 
-
-class Group(models.Model):
+class UnixGroup(models.Model):
     groupname = models.CharField(max_length=20, unique=True)
     gid = models.IntegerField(unique=True)
 
@@ -15,24 +14,23 @@ class Group(models.Model):
         return self.groupname
 
 
-class User(AbstractUser):
+class UnixUser(models.Model):
+    user = models.OneToOneField(User)
     uid = models.IntegerField(unique=True, blank=True, null=True)
-    unix_groups = models.ManyToManyField(Group, blank=True)
+    unix_groups = models.ManyToManyField(UnixGroup, blank=True)
     email_validated = models.BooleanField(default=True, blank=True)
     email_validation_code = models.CharField(max_length=50, blank=True, null=True)
 
-    def set_password(self, raw_password):
-        salt = crypt.crypt(str(time.time()), '$5$')[30:]
-        seed = "$5${}".format(salt)
-        self.password = crypt.crypt(raw_password, seed)
-
-    def check_password(self, raw_password):
-        checkpass = crypt.crypt(raw_password, self.password)
-        return checkpass == self.password
+    def get_password(self):
+        hasher = identify_hasher(self.user.password)
+        if isinstance(hasher, BaseUnixPasswordHasher):
+            return self.user.password[len(hasher.algorithm):]
+        else:
+            return None
 
     def get_uid(self):
         if not self.uid:
-            max_uid = User.objects.all().aggregate(models.Max('uid'))['uid__max']
+            max_uid = self.__class__.objects.all().aggregate(models.Max('uid'))['uid__max']
             if max_uid:
                 self.uid = max_uid + 1
             else:
@@ -40,8 +38,22 @@ class User(AbstractUser):
             self.save()
         return self.uid
 
+    @classmethod
+    def get_by_user(cls, user_obj):
+        try:
+            unixuser = cls.objects.get(user=user_obj)
+        except cls.DoesNotExist:
+            unixuser = cls(user=user_obj)
+            unixuser.get_uid()
+            unixuser.email_validated = False
+            unixuser.save()
+        return unixuser
+
+    def __unicode__(self):
+        return self.user.username
+
 
 class AuthorizedKey(models.Model):
-    user = models.ForeignKey(User, related_name='authorized_keys')
+    user = models.ForeignKey(UnixUser, related_name='authorized_keys')
     name = models.CharField(max_length=50)
     sshkey = models.TextField(max_length=1024)

@@ -16,15 +16,15 @@ from django_unixusers import forms, models
 import uuid
 
 class ValidateEmailView(SingleObjectMixin, View):
-    model = models.User
+    model = models.UnixUser
     slug_field = 'email_validation_code'
 
     def get(self, request, *args, **kwargs):
         user = self.get_object()
         messages.add_message(self.request, messages.INFO,
-                             "Got validation email for user '{}' at {}".format(user.username, user.email))
+                             "Got validation email for user '{}' at {}".format(user.user.username, user.user.email))
         if request.user.is_authenticated():
-            if request.user != user:
+            if request.user != user.user:
                 messages.add_message(self.request, messages.ERROR,
                                      'Attempting to validate email for one user while logged in as another is not allowed!')
                 return HttpResponseRedirect(reverse('main'))
@@ -42,10 +42,11 @@ class RequestValidateEmailView(View):
         if not request.user.email or request.user.email == '':
             return JsonResponse({'result': 'error', 'message': 'Invalid email'})
         base_url = "{}://{}".format(request.scheme, request.environ['HTTP_HOST'])
-        request.user.email_validation_code = str(uuid.uuid4())
-        request.user.save()
+        unixuser = models.UnixUser.get_by_user(request.user)
+        unixuser.email_validation_code = str(uuid.uuid4())
+        unixuser.save()
         email_body = render_to_string('django_unixusers/email/validate.html',
-                                      {'user': request.user,
+                                      {'user': unixuser,
                                        'base_url': base_url})
         request.user.email_user("Validate your email", email_body)
         return JsonResponse({'result': 'ok'})
@@ -100,10 +101,21 @@ class ProfileView(AccessControlMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
-        if not self.request.user.email_validated:
+        unixuser = models.UnixUser.get_by_user(self.request.user)
+        if not unixuser.email_validated:
             messages.add_message(self.request, messages.WARNING,
                                  render_to_string('django_unixusers/messages/email_requires_validation.html'))
         context['forms'] = {
             'password_change': forms.PasswordChangeForm(),
         }
         return context
+
+    def post(self, request):
+        form_name = request.POST.get('profile_form_name')
+        if form_name == 'PasswordChangeForm':
+            messages.add_message(request, messages.INFO,
+                                 "Process password change form.")
+        else:
+            messages.add_message(request, messages.WARNING,
+                                 "Nothing done! {}".format(form_name))
+        return HttpResponseRedirect(reverse('profile'))

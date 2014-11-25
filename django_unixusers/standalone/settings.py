@@ -26,9 +26,25 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUTH_USER_MODEL = 'django_unixusers.User'
+# AUTH_USER_MODEL = 'django_unixusers.User'
 
 BASE_UNIX_UID = 3000
+
+PASSWORD_HASHERS = (
+    'django_unixusers.hashers.Sha256UnixPasswordHasher',
+    'django_unixusers.hashers.Sha512UnixPasswordHasher',
+    'django_unixusers.hashers.MD5UnixPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.SHA1PasswordHasher',
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedSHA1PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
+    'django.contrib.auth.hashers.CryptPasswordHasher',
+)
+
 
 # Application definition
 

@@ -86,6 +86,6 @@ class UserAdmin(admin.ModelAdmin):
             context, current_app=self.admin_site.name)
 
 
-admin.site.register(models.User, UserAdmin)
+admin.site.register(models.UnixUser)
 
-admin.site.register(models.Group)
+admin.site.register(models.UnixGroup)
