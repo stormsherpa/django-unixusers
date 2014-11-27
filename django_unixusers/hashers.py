@@ -18,8 +18,9 @@ class BaseUnixPasswordHasher(BasePasswordHasher):
         return crypted_pass == bare_encoded
 
     def safe_summary(self, encoded):
-        _, algorithm, salt, hash = encoded.split('$', 2)
-        assert algorithm == self.password_hash_code
+        parts =  encoded.split('$', 3)
+        algorithm, code, salt, hash = encoded.split('$', 3)
+        assert algorithm == self.algorithm
         return SortedDict([
             ('algorithm', algorithm),
             ('salt', mask_hash(salt, show=2)),

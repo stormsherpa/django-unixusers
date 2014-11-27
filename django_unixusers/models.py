@@ -15,7 +15,7 @@ class UnixGroup(models.Model):
 
 
 class UnixUser(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL)
     uid = models.IntegerField(unique=True, blank=True, null=True)
     unix_groups = models.ManyToManyField(UnixGroup, blank=True)
     email_validated = models.BooleanField(default=True, blank=True)
