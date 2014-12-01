@@ -113,8 +113,16 @@ class ProfileView(AccessControlMixin, TemplateView):
     def post(self, request):
         form_name = request.POST.get('profile_form_name')
         if form_name == 'PasswordChangeForm':
-            messages.add_message(request, messages.INFO,
-                                 "Process password change form.")
+            passform = forms.PasswordChangeForm(request.POST)
+            if passform.is_valid() and passform.is_oldpassword_valid(request.user):
+                request.user.set_password(passform.cleaned_data['password1'])
+                request.user.save()
+                messages.add_message(request, messages.SUCCESS, 'Password Changed.')
+            else:
+                for e in passform.errors.keys():
+                    for err in passform.errors[e]:
+                        messages.add_message(request, messages.ERROR, err)
+
         else:
             messages.add_message(request, messages.WARNING,
                                  "Nothing done! {}".format(form_name))
